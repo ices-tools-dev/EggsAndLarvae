@@ -32,11 +32,11 @@ screenFile <- function(filename, email, datatype, quiet = FALSE) {
 
 ## Set the directory containing the files to be checked
 
-fnames <- dir("//fs.ices.local/projects/DP1/projects/EggLarvae_Database/Data/NEW FORMAT/MEGS/By_year", full = TRUE)
+fnames <- dir("//fs.ices.local/projects/DP1/projects/EggLarvae_Database/Data/NEW FORMAT/MIK", full = TRUE)
 
 # set email of submitter
 
-my_email = "youremail@wherever.com"
+my_email = "adriana.villamor@ices.dk"
 
 res <- 
   do.call(
@@ -57,7 +57,7 @@ check <- res %>% filter(NumberOfErrors != "-1")
 
 
 #select each row one by one
-url <- check$ScreenResultURL[3]
+url <- check$ScreenResultURL[1]
 
 url <- as.character(url)
 
@@ -75,7 +75,7 @@ ready <- res %>% filter(NumberOfErrors == "-1")
 # In this link you have to substitute the username and token
 # USERNAME = your ices user name
 # TOKEN = contact ices for the token: carlos@ices.dk 
-ready$upload_link <- paste0("http://eggsandlarvae.ices.dk/EggsAndLarvaeWebServices.asmx/uploadEggsAndLarvaeFile?user=USERNAME&token=TOKEN&datsuSessionID=", ready$SessionID)
+ready$upload_link <- paste0("http://eggsandlarvae.ices.dk/EggsAndLarvaeWebServices.asmx/uploadEggsAndLarvaeFile?user=adriana.villamor&token=TOKEN&datsuSessionID=", ready$SessionID)
 
 
 #Uploading to the database
