@@ -19,4 +19,4 @@ ibts_statrecs <-
     statrec = details_statrec$Key
   )
 
-write.taf(ibts_statrecs, quote = TRUE)
+write.taf(ibts_statrecs, file = "TAF-project/bootstrap/ibts_statrecs.csv",quote = TRUE)

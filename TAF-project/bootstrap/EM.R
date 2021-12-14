@@ -9,11 +9,12 @@
 
 library(icesTAF)
 
-# TODO: change to reading form web services
-# url <- "https://eggsandlarvae.ices.dk/EggsAndLarvaeWebServices.asmx/getEggsAndLarvaeData?yearBegining=2008&yearEnd=2016&survey=MIK"
-# out <- jsonlite::fromJSON(url, simplifyDataFrame = TRUE)
+url <- "https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?yearBegining=2008&yearEnd=2016&survey=MIK"
+out <- jsonlite::fromJSON(url, simplifyDataFrame = TRUE)
 
-em <-
-  read.taf(taf.boot.path("initial/data/", "EM_EggsAndLarvaeDataSet20201019.csv"))
+# em <-
+#   read.taf(taf.boot.path("initial/data/", "EM_EggsAndLarvaeDataSet20201019.csv"))
 
-write.taf(em)
+em <- out
+
+write.taf(em, file = "TAF-project/bootstrap/em.csv")

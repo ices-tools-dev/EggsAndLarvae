@@ -7,14 +7,14 @@ library(icesTAF)
 library(stringr)
 library(dplyr)
 
-mkdir("model")
+mkdir("TAF-project/model")
 
 # read herring sample data
-ehm <- read.taf("data/ehm.csv", colClasses = c("ELVolFlag" = "character")) %>% tibble()
+ehm <- read.taf("TAF-project/data/ehm.csv") %>% tibble()
 # statrec lookup
-statrec_lookup <- read.taf("data/statrec_lookup.csv")
+statrec_lookup <- read.taf("TAF-project/data/statrec_lookup.csv")
 # ibts stat recs
-ibts_statrecs <- read.taf(taf.data.path("ibts_rects", "ibts_statrecs.csv"))
+ibts_statrecs <- read.taf("TAF-project/bootstrap/ibts_statrecs.csv")
 
 
 
@@ -27,11 +27,11 @@ ibts_statrecs <- read.taf(taf.data.path("ibts_rects", "ibts_statrecs.csv"))
 ehm_byhaul <-
   ehm %>%
   group_by(
-    HaulID, Year, StartLatitude, StartLongitude, statrec, DepthBottom, DepthLower,
-    Distance, FlowIntRevs, FlowIntCalibr, NetopeningArea, ELVolFlag
+    haulId, year, startLatitude, startLongitude, statrec, depthBottom, depthLower,
+    distance, flowIntRevs, flowIntCalibr, netopeningArea, elvolFlag
   ) %>%
   summarise(
-    NumberLarvae = sum(Number * SubFactor, na.rm = TRUE),
+    NumberLarvae = sum(number * subFactor, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -42,9 +42,9 @@ ehm_byhaul <-
   ehm_byhaul %>%
   mutate(
     L.sqm = ifelse(
-      ELVolFlag == "F",
-      NumberLarvae * DepthLower * FlowIntCalibr / (FlowIntRevs * NetopeningArea),
-      NumberLarvae * DepthLower / (Distance * NetopeningArea)
+      elvolFlag == "F",
+      NumberLarvae * depthLower * dlowIntCalibr / (dlowIntRevs * netopeningArea),
+      NumberLarvae * depthLower / (distance * netopeningArea)
     )
   )
 
@@ -54,7 +54,7 @@ ehm_byhaul <-
 # Calculation of mean herring larvae abundance per rectangle
 ehm_byrect <-
   ehm_byhaul %>%
-  group_by(Year, statrec, area, af) %>%
+  group_by(year, statrec, area, af) %>%
   summarise(
     L.sqm = mean(L.sqm, na.rm = TRUE),
     .groups = "drop"
@@ -65,13 +65,13 @@ RectAbun <-
   ehm_byrect %>%
   filter(statrec %in% ibts_statrecs$statrec)
 
-write.taf(RectAbun, dir = "model")
+write.taf(RectAbun, dir = "TAF-project/model")
 
 # calculation of mean abundance per subarea, *not* filtered by IBTS squares
 ehm_by_area <-
   ehm_byrect %>%
   group_by(
-    Year, area, af
+    year, area, af
   ) %>%
   summarise(
     L.sqm = mean(L.sqm, na.rm = TRUE),
@@ -80,7 +80,7 @@ ehm_by_area <-
 
 aggArea <- ehm_by_area
 # writing of table with subarea abundances
-write.taf(aggArea, dir = "model")
+write.taf(aggArea, dir = "TAF-project/model")
 
 # caculation of total herring larvae abundance per subarea per year
 index_by_year <-
@@ -88,11 +88,11 @@ index_by_year <-
   mutate(
     miksec = L.sqm * af * 3086913600
   ) %>%
-  group_by(Year) %>%
+  group_by(year) %>%
   summarise(
     index = sum(miksec, na.rm = TRUE) * 10^-9
   )
 
 # writing index time series table
 # TOD check format
-write.taf(index_by_year, dir = "model")
+write.taf(index_by_year, dir = "TAF-project/model")

@@ -6,61 +6,66 @@
 library(icesTAF)
 library(dplyr)
 
-mkdir("data")
+mkdir("TAF-project/data")
 
 # read hauls meta-data
-eh <- read.taf(taf.data.path("EH", "eh.csv"), colClasses = c("ELVolFlag" = "character")) %>% tibble()
+eh <- read.taf("TAF-project/bootstrap/eh.csv") %>% tibble()
 # read herring sample data
-em <- read.taf(taf.data.path("EM", "em.csv")) %>% tibble()
+em <- read.taf("TAF-project/bootstrap/em.csv") %>% tibble()
 
 # process eh data
 eh <-
   eh %>%
   select(
-    HaulID, Year, StartLatitude, StartLongitude, statrec, DepthBottom, DepthLower,
-    Distance, FlowIntRevs, FlowIntCalibr, NetopeningArea, ELVolFlag
+    haulId, year, startLatitude, startLongitude, statrec, depthBottom, depthLower,
+    distance, flowIntRevs, flowIntCalibr, netopeningArea, elvolFlag
   )
 
 # process em data
 em <-
   em %>%
   select(
-    HaulID, Length, Number, SubFactor
+    haulId, length, number, subFactor, species
   )
+
+# Select only herring data
+
+em <-
+  em %>% filter(species == "Clupea harengus")
 
 # clean NAs in data
 
 # all number=NA set to 0
 # TODO investigate why there are NAs, either remove or set to zero
-em$Number[is.na(em$Number)] <- 0
-em$SubFactor[is.na(em$SubFactor)] <- 1
+em$number[is.na(em$number)] <- 0
+em$subFactor[is.na(em$subFactor)] <- 1
 
 # all missing DepthLower data replaced by DepthBottom - 5
-eh$DepthLower[is.na(eh$DepthLower)] <- eh$DepthBottom - 5
+eh$depthLower[is.na(eh$depthLower)] <- eh$depthBottom - 5
 # add statrec form lat and long?
 
 # Warn about netopening area if NA
 
 # merging of station data with length data, keep all eh records
-ehm <- left_join(eh, em, by = "HaulID")
+ehm <- left_join(eh, em, by = "haulId")
 
 # here defining geographic boundaries for the "Exclusion Rule" and defining critical length (here CL > 18)
 ehm  <-
   subset(
     ehm,
-    ehm$StartLongitude >= 9 |
-    (ehm$StartLatitude < 54.0 & (ehm$Length > 18 | is.na(ehm$Length))) |
-    (ehm$StartLatitude >= 54.0 & ehm$StartLongitude < 6.0) |
-    (ehm$StartLatitude >= 57.0 & ehm$StartLongitude < 9.0) |
+    ehm$startLongitude >= 9 |
+    (ehm$startLatitude < 54.0 & (ehm$length > 18 | is.na(ehm$length))) |
+    (ehm$startLatitude >= 54.0 & ehm$startLongitude < 6.0) |
+    (ehm$startLatitude >= 57.0 & ehm$startLongitude < 9.0) |
     (
-      ehm$StartLongitude >= 6.0 & ehm$StartLongitude < 9.0 &
-      ehm$StartLatitude >= 54.0 & ehm$StartLatitude < 57.0 &
-      (ehm$Length > 18 | is.na(ehm$Length))
+      ehm$startLongitude >= 6.0 & ehm$startLongitude < 9.0 &
+      ehm$startLatitude >= 54.0 & ehm$startLatitude < 57.0 &
+      (ehm$length > 18 | is.na(ehm$length))
     )
   )
 
 # write out cleaned, merged and filtered data
-write.taf(ehm, dir = "data")
+write.taf(ehm, dir = "TAF-project/data")
 
 
 
@@ -97,4 +102,4 @@ statrec_lookup <-
 
 
 # write out lookup table
-write.taf(statrec_lookup, dir = "data")
+write.taf(statrec_lookup, dir = "TAF-project/data")
