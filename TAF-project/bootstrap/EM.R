@@ -9,7 +9,7 @@
 
 library(icesTAF)
 
-url <- "https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?yearBegining=2008&yearEnd=2016&survey=MIK"
+url <- "https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?yearBegining=1991&yearEnd=2022&survey=MIK"
 out <- jsonlite::fromJSON(url, simplifyDataFrame = TRUE)
 
 # em <-

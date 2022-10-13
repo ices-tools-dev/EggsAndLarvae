@@ -24,6 +24,8 @@ ibts_statrecs <- read.taf("TAF-project/bootstrap/ibts_statrecs.csv")
 # Here starts index calculation
 
 # calculation of raised number of herring larvae per MIK-station (raised by subsampling factor per length class)
+# ehm$subFactor <- as.integer(ehm$subFactor)
+
 ehm_byhaul <-
   ehm %>%
   group_by(
@@ -38,15 +40,19 @@ ehm_byhaul <-
 # from here onwards calculation of index as in IndexCalculation2015.R
 
 # Calculation Number herring larvae per m2
+
+
 ehm_byhaul <-
   ehm_byhaul %>%
   mutate(
     L.sqm = ifelse(
       elvolFlag == "F",
-      NumberLarvae * depthLower * dlowIntCalibr / (dlowIntRevs * netopeningArea),
+      NumberLarvae * depthLower * flowIntCalibr / (flowIntRevs * netopeningArea),
       NumberLarvae * depthLower / (distance * netopeningArea)
     )
   )
+
+
 
 ehm_byhaul <-
   left_join(ehm_byhaul, statrec_lookup, by = "statrec")
@@ -59,6 +65,10 @@ ehm_byrect <-
     L.sqm = mean(L.sqm, na.rm = TRUE),
     .groups = "drop"
   )
+
+# ehm_byrect$L.sqm[ehm_byrect$L.sqm == "NaN"]<-0
+ehm_byrect$L.sqm[ehm_byrect$L.sqm == "Inf"]<-0
+
 
 # filter for IBTS squares
 RectAbun <-
@@ -78,6 +88,11 @@ ehm_by_area <-
     .groups = "drop"
   )
 
+
+#AV, remove rows with no area attributed:
+
+ehm_by_area <- na.omit(ehm_by_area) 
+
 aggArea <- ehm_by_area
 # writing of table with subarea abundances
 write.taf(aggArea, dir = "TAF-project/model")
@@ -96,3 +111,4 @@ index_by_year <-
 # writing index time series table
 # TOD check format
 write.taf(index_by_year, dir = "TAF-project/model")
+
