@@ -73,6 +73,10 @@ eh_excl <-
 
 # Jan 2023 start application of exclusion rule
 
+str(em)
+em$length <- as.numeric(em$length)
+
+
 ehm_excl <- left_join(eh_excl, em, by = "haulId")
 
 ehm_excl <-
