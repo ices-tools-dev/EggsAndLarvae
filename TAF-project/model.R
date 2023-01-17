@@ -26,6 +26,9 @@ ibts_statrecs <- read.taf("TAF-project/bootstrap/ibts_statrecs.csv")
 # calculation of raised number of herring larvae per MIK-station (raised by subsampling factor per length class)
 # ehm$subFactor <- as.integer(ehm$subFactor)
 
+
+ehm$subFactor <- as.numeric(ehm$subFactor)
+
 ehm_byhaul <-
   ehm %>%
   group_by(
@@ -40,6 +43,15 @@ ehm_byhaul <-
 # from here onwards calculation of index as in IndexCalculation2015.R
 
 # Calculation Number herring larvae per m2
+
+#Here:
+
+
+str(ehm_byhaul)
+ehm_byhaul$distance <- as.numeric(ehm_byhaul$distance)
+ehm_byhaul$flowIntRevs <- as.numeric(ehm_byhaul$flowIntRevs)
+ehm_byhaul$flowIntCalibr <- as.numeric(ehm_byhaul$flowIntCalibr)
+ehm_byhaul$netopeningArea <- as.numeric(ehm_byhaul$netopeningArea)
 
 
 ehm_byhaul <-

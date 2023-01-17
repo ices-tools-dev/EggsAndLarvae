@@ -53,10 +53,72 @@ eh$depthLower <- as.numeric(eh$depthLower)
 eh$depthLower[is.na(eh$depthLower)] <- eh$depthBottom - 5
 # add statrec form lat and long?
 
+#Jan 2023: selection of variables for application of exclusion rule
+
+eh_excl <-
+        eh %>%
+        select(
+                haulId, startLatitude, startLongitude
+        )
+
+# em <-
+#         em_mk %>%
+#         select(
+#                 HaulID, length, number, SubSamplingFactor
+#         )
+
+# em_mk$number[is.na(em_mk$number)] <- 0
+# em_mk$SubSamplingFactor[is.na(em_mk$SubSamplingFactor)] <- 1 
+
+
+# Jan 2023 start application of exclusion rule
+
+ehm_excl <- left_join(eh_excl, em, by = "haulId")
+
+ehm_excl <-
+        subset(
+                ehm_excl,
+                ehm_excl$startLongitude >= 9 |
+                        (ehm_excl$startLatitude < 54.0 & (ehm_excl$length > 18 | is.na(ehm_excl$length))) |
+                        (ehm_excl$startLatitude >= 54.0 & ehm_excl$startLongitude < 6.0) |
+                        (ehm_excl$startLatitude >= 57.0 & ehm_excl$startLongitude < 9.0) |
+                        (
+                                ehm_excl$startLongitude >= 6.0 & ehm_excl$startLongitude < 9.0 &
+                                        ehm_excl$startLatitude >= 54.0 & ehm_excl$startLatitude < 57.0 &
+                                        (ehm_excl$length > 18 | is.na(ehm_excl$length))
+                        )
+        )
+
+ehm_excl$number[is.na(ehm_excl$number)] <- 0
+ehm_excl$subFactor[is.na(ehm_excl$subFactor)] <- 1 
+
+
+
+# selection of larvae data variables from above results for the index calculation
+
+ehm_select <-
+        ehm_excl %>%
+        select(
+                haulId, length, number, subFactor
+        )
+
+ehm <- left_join(eh, ehm_select, by = "haulId")
+
+# replace all NAs with 0 to obtain zero catches - this is necessary!!
+
+ehm$number[is.na(ehm$number)] <- 0
+ehm$subFactor[is.na(ehm$subFactor)] <- 1
+
+
+
+
+
+
+
 # Warn about netopening area if NA
 
 # merging of station data with length data, keep all eh records
-ehm <- left_join(eh, em, by = "haulId")
+# ehm <- left_join(eh, em, by = "haulId")
 
 # ehm$number[is.na(ehm$number)] <- 0
 # ehm$subFactor[is.na(ehm$subFactor)] <- 1
@@ -83,19 +145,19 @@ ehm <- left_join(eh, em, by = "haulId")
 
 
 
-ehm  <-
-  subset(
-    ehm,
-    ehm$startLongitude >= 9 |
-    (ehm$startLatitude < 54.0 & (ehm$length > 18 | is.na(ehm$length))) |
-    (ehm$startLatitude >= 54.0 & ehm$startLongitude < 6.0) |
-    (ehm$startLatitude >= 57.0 & ehm$startLongitude < 9.0) |
-    (
-      ehm$startLongitude >= 6.0 & ehm$startLongitude < 9.0 &
-      ehm$startLatitude >= 54.0 & ehm$startLatitude < 57.0 &
-      (ehm$length > 18 | is.na(ehm$length))
-    )
-  )
+# ehm  <-
+#   subset(
+#     ehm,
+#     ehm$startLongitude >= 9 |
+#     (ehm$startLatitude < 54.0 & (ehm$length > 18 | is.na(ehm$length))) |
+#     (ehm$startLatitude >= 54.0 & ehm$startLongitude < 6.0) |
+#     (ehm$startLatitude >= 57.0 & ehm$startLongitude < 9.0) |
+#     (
+#       ehm$startLongitude >= 6.0 & ehm$startLongitude < 9.0 &
+#       ehm$startLatitude >= 54.0 & ehm$startLatitude < 57.0 &
+#       (ehm$length > 18 | is.na(ehm$length))
+#     )
+#   )
 
 # write out cleaned, merged and filtered data
 write.taf(ehm, dir = "TAF-project/data")
