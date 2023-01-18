@@ -54,6 +54,13 @@ ehm_byhaul$flowIntCalibr <- as.numeric(ehm_byhaul$flowIntCalibr)
 ehm_byhaul$netopeningArea <- as.numeric(ehm_byhaul$netopeningArea)
 
 
+#we have the doubt what R does in the case of NAs in elvolflag
+#i will put D in those to make sure the code does what is intended
+
+ehm_byhaul$elvolFlag[is.na(ehm_byhaul$elvolFlag)] <- "D"
+
+
+
 ehm_byhaul <-
   ehm_byhaul %>%
   mutate(
@@ -120,7 +127,9 @@ index_by_year <-
     index = sum(miksec, na.rm = TRUE) * 10^-9
   )
 
+index_by_year_v3 <- index_by_year
+
 # writing index time series table
 # TOD check format
-write.taf(index_by_year, dir = "TAF-project/model")
+write.taf(index_by_year_v3, dir = "TAF-project/model")
 
