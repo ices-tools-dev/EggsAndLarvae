@@ -24,9 +24,13 @@ names(MIK_Dat$HaulID)
 # Get data in database, 2020 for the time being
 require(XML)
 
-url <-"https://eggsandlarvae.ices.dk/EggsAndLarvaeWebServices.asmx/getEggsAndLarvaeData?yearBegining=2008&yearEnd=2016&month=&stage=&survey=MIK&species=&lastModifiedDate="
+url <-"https://eggsandlarvae.ices.dk/webservices/getEggsAndLarvaeData?yearBegining=2008&yearEnd=2016&month=&stage=&survey=MIK&species=&lastModifiedDate="
 
-out <- jsonlite::fromJSON(url, simplifyDataFrame = TRUE)
+url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=2024&SurveyCode=14537"
+out_EH <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
+
+url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=2024&SurveyCode=14537"
+out_EM <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
 
 Current_station <- EH_EggsAndLarvaeDataSet20201019
 Current_lengths <- EM_EggsAndLarvaeDataSet20201019

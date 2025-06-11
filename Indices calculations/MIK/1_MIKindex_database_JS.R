@@ -6,39 +6,48 @@ library(stringr)
 wd <- "Q:/20-forskning/20-dfad/users/jostou/home/25_04_25_sildelarve_database/"
 
 # reading of station data
-MIK_Station<-read.csv(paste0(wd, "data/EggsAndLarvae_EH_0425395059.csv")) 
-MIK_Station <- MIK_Station[MIK_Station$ELHaulFlag == "", ]
+#url <-"https://eggsandlarvae.ices.dk/webservices/getEggsAndLarvaeData?yearBegining=2008&yearEnd=2016&month=&stage=&survey=MIK&species=&lastModifiedDate="
+
+url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=2024&SurveyCode=14537"
+MIK_Station <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
+
+url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=2024&SurveyCode=14537"
+MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
+
+
+#MIK_Station<-read.csv(paste0(wd, "data/EggsAndLarvae_EH_0425395059.csv")) 
+MIK_Station <- MIK_Station[is.na(MIK_Station$elhaulFlag), ]
 # define Distance,FlowIntRevs,FlowIntCalibr as.numeric
 
-MIK_Station$Distance<-as.numeric(as.character(MIK_Station$Distance))
-MIK_Station$FlowIntRevs<-as.numeric(as.character(MIK_Station$FlowIntRevs))
-MIK_Station$FlowIntCalibr<-as.numeric(as.character(MIK_Station$FlowIntCalibr))
+MIK_Station$distance<-as.numeric(as.character(MIK_Station$distance))
+MIK_Station$flowIntRevs<-as.numeric(as.character(MIK_Station$flowIntRevs))
+MIK_Station$flowIntCalibr<-as.numeric(as.character(MIK_Station$flowIntCalibr))
 
 # Reading of herring larvae data (numbers per Length class, unmeasured, subsampling factor)
-MIKindex_lengths<-read.csv(paste0(wd, "data/EggsAndLarvae_EM_0425395059.csv"))
-MIKindex_lengths <- MIKindex_lengths[MIKindex_lengths$Species == "Clupea harengus", ]
+#MIKindex_lengths<-read.csv(paste0(wd, "data/EggsAndLarvae_EM_0425395059.csv"))
+MIKindex_lengths <- MIKindex_lengths[MIKindex_lengths$species == "Clupea harengus", ]
 
 # creating of variable "year" in length data
-MIKindex_lengths$year<-str_sub(MIKindex_lengths$HaulID,1,4)
+MIKindex_lengths$year<-str_sub(MIKindex_lengths$haulId,1,4)
 MIKindex_lengths$year<-as.numeric(MIKindex_lengths$year)
-MIKindex_lengths$Length<-as.numeric(MIKindex_lengths$Length)
+MIKindex_lengths$length<-as.numeric(MIKindex_lengths$length)
 
 # defining global variables "year" and "index" and file for MIK index time series (index_TS) 
 year<-"year"
 index<-"index"
 index_TS<-c(year,index)
-max_YR<-max(MIK_Station$Year)
+max_YR<-max(MIK_Station$year)
 
 # Initiaton of loop to calculate MIK index time series for all survey years since 1992
 
-for(i in 1992:max_YR) {
+for(i in 2024:max_YR) {
   print(i)
   # Here starts index calculation for each survey year
   # Subsetting for survey year
-  indexSTAT<-subset(MIK_Station,MIK_Station$Year==i)
+  indexSTAT<-subset(MIK_Station,MIK_Station$year==i)
   indexHER<-subset(MIKindex_lengths,MIKindex_lengths$year==i)
   
-  varPOS<-c("HaulID","StartLatitude","StartLongitude")
+  varPOS<-c("haulId","startLatitude","startLongitude")
   indexPOS<-indexSTAT[varPOS]
   
   # merging of station data with lenght data
