@@ -8,15 +8,18 @@ wd <- "Q:/20-forskning/20-dfad/users/jostou/home/25_04_25_sildelarve_database/"
 # reading of station data
 #url <-"https://eggsandlarvae.ices.dk/webservices/getEggsAndLarvaeData?yearBegining=2008&yearEnd=2016&month=&stage=&survey=MIK&species=&lastModifiedDate="
 
-url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=2024&SurveyCode=14537"
-MIK_Station <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
+#url_historical<-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeData?Year=1991"
+#hist <- jsonlite::fromJSON(url_historical, simplifyDataFrame = TRUE)
 
-url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=2024&SurveyCode=14537"
+url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=1992&SurveyCode=14537"
+MIK_Station1 <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
+
+url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=1992&SurveyCode=14537"
 MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
 
 
 #MIK_Station<-read.csv(paste0(wd, "data/EggsAndLarvae_EH_0425395059.csv")) 
-MIK_Station <- MIK_Station[is.na(MIK_Station$elhaulFlag), ]
+MIK_Station <- MIK_Station1[is.na(MIK_Station1$elhaulFlag), ]
 # define Distance,FlowIntRevs,FlowIntCalibr as.numeric
 
 MIK_Station$distance<-as.numeric(as.character(MIK_Station$distance))
@@ -40,7 +43,7 @@ max_YR<-max(MIK_Station$year)
 
 # Initiaton of loop to calculate MIK index time series for all survey years since 1992
 
-for(i in 2024:max_YR) {
+for(i in 1992:max_YR) {
   print(i)
   # Here starts index calculation for each survey year
   # Subsetting for survey year
@@ -51,57 +54,57 @@ for(i in 2024:max_YR) {
   indexPOS<-indexSTAT[varPOS]
   
   # merging of station data with lenght data
-  indexALL<-merge(indexPOS,indexHER, by=c("HaulID"), all.x=TRUE)
+  indexALL<-merge(indexPOS,indexHER, by=c("haulID"), all.x=TRUE)
   
   # here defining geographic boundaries for the "Exclusion Rule" and defining critical length (here CL > 18)
   
   indexSubset<-
     subset(indexALL,
-           (indexALL$StartLatitude>=54&indexALL$StartLongitude<6)
-           |(indexALL$StartLatitude>=57&indexALL$StartLongitude<9)
-           |indexALL$StartLongitude>=9
-           |(indexALL$StartLatitude<54&(indexALL$Length>18
-                                   |is.na(indexALL$Length)))
-           |(indexALL$StartLongitude>=6&indexALL$StartLongitude<9&indexALL$StartLatitude>=54&indexALL$StartLatitude<57&(indexALL$Length>18|is.na(indexALL$Length))))
+           (indexALL$startLatitude>=54&indexALL$startLongitude<6)
+           |(indexALL$startLatitude>=57&indexALL$startLongitude<9)
+           |indexALL$startLongitude>=9
+           |(indexALL$startlatitude<54&(indexALL$length>18
+                                   |is.na(indexALL$length)))
+           |(indexALL$startlongitude>=6&indexALL$startlongitude<9&indexALL$startlatitude>=54&indexALL$startlatitude<57&(indexALL$length>18|is.na(indexALL$length))))
   
   # all number=NA set to 0 
-  indexSubset$Number[is.na(indexSubset$Number)]<-0
-  indexSubset$Number<-as.numeric(indexSubset$Number)
+  indexSubset$number[is.na(indexSubset$number)]<-0
+  indexSubset$number<-as.numeric(indexSubset$number)
   
-  indexSubset$RaisingFactor[is.na(indexSubset$RaisingFactor)]<-1
-  indexSubset$RaisingFactor<-as.numeric(indexSubset$RaisingFactor)
+  indexSubset$raisingFactor[is.na(indexSubset$raisingFactor)]<-1
+  indexSubset$raisingFactor<-as.numeric(indexSubset$raisingFactor)
   
   # calculation of raised Number per Length class (raised by subsampling factor)
   
-  indexSubset$NumberLarvae<-indexSubset$Number*indexSubset$RaisingFactor
+  indexSubset$numberLarvae<-indexSubset$number*indexSubset$raisingFactor
   
   # calculation of number of herring larvae per MIK-station
   MIKindex_aggLV<-aggregate(subset(indexSubset,select=c("NumberLarvae")),
-                            by=list(indexSubset$HaulID),sum)
+                            by=list(indexSubset$haulID),sum)
   
-  names(MIKindex_aggLV)[1]<-"HaulID"
+  names(MIKindex_aggLV)[1]<-"haulID"
   
   
   # merging of aggregated larvae data (sum) with relevant station data
-  Vars_sel<-c("HaulID","StartLatitude","StartLongitude","statrec","DepthBottom",
-              "DepthLower","Distance","FlowIntRevs","FlowIntCalibr","NetopeningArea","ELVolFlag")
+  Vars_sel<-c("haulID","startLatitude","startLongitude","statrec","depthBottom",
+              "depthLower","distance","flowIntRevs","flowIntCalibr","netopeningArea","eLVolFlag")
   
   MIKindex_StatDat<-indexSTAT[Vars_sel]
-  MIKindex_sumLV<-merge(MIKindex_StatDat,MIKindex_aggLV,by="HaulID",all.x=TRUE)
+  MIKindex_sumLV<-merge(MIKindex_StatDat,MIKindex_aggLV,by="haulID",all.x=TRUE)
   
   # all NumberLarvae=NA set to 0
   MIKindex_sumLV$NumberLarvae[is.na(MIKindex_sumLV$NumberLarvae)]<-0
   
   # all missing DepthLower data replaced by DepthBottom - 5 
-  MIKindex_sumLV$DepthLower[is.na(MIKindex_sumLV$DepthLower)] <- MIKindex_sumLV$DepthBottom-5
+  MIKindex_sumLV$depthLower[is.na(MIKindex_sumLV$depthLower)] <- MIKindex_sumLV$depthBottom-5
   
   # from here onwards calculation of index as in IndexCalculation2015.R
   
   
-  MIKindex_sumLV$L.sqm<- ifelse(MIKindex_sumLV$ELVolFlag=="F", 
-                                MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$DepthLower*MIKindex_sumLV$FlowIntCalibr/(MIKindex_sumLV$FlowIntRevs*MIKindex_sumLV$NetopeningArea), 
-                                ifelse(MIKindex_sumLV$ELVolFlag=="D", MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$DepthLower/(MIKindex_sumLV$Distance*MIKindex_sumLV$NetopeningArea), 
-                                       MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$DepthLower/(3002*MIKindex_sumLV$NetopeningArea)))
+  MIKindex_sumLV$L.sqm<- ifelse(MIKindex_sumLV$eLVolFlag=="F", 
+                                MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$depthLower*MIKindex_sumLV$flowIntCalibr/(MIKindex_sumLV$flowIntRevs*MIKindex_sumLV$netopeningArea), 
+                                ifelse(MIKindex_sumLV$eLVolFlag=="D", MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$depthLower/(MIKindex_sumLV$distance*MIKindex_sumLV$netopeningArea), 
+                                       MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower/(3002*MIKindex_sumLV$netopeningArea)))
   
   
   # allocation of subareas
