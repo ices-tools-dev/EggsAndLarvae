@@ -1,6 +1,6 @@
 # opens Module stringr
 library(stringr)
-install.packages('icesDatras')
+#install.packages('icesDatras')
 library(icesDatras)
 options(timeout = 1000)
 
@@ -158,7 +158,6 @@ for(i in 1992:max_YR) {
   IBTS_Rects<-read.table(paste0(wd, "/IBTS_Rects.txt"), header=TRUE,sep=",")
   names(aggRect)[4]="dummy"
   names(aggRect)[1]="Rectangle"
-  names(aggRect)[2]="suba"
   
   
   MIK_RAbun<-merge(IBTS_Rects,aggRect,by="Rectangle",all.y=TRUE)
@@ -174,14 +173,15 @@ for(i in 1992:max_YR) {
               append=TRUE, sep=",", row.names = F, col.names = head)
   
   # extraction of data for mean abundance per Subarea
-  A_Vars<-c("suba","L.sqm")
+  A_Vars<-c("area","L.sqm")
   MIKindex_byA<-aggRect[A_Vars]
   
   #assume that missing is 0
   MIKindex_byA$L.sqm[is.na(MIKindex_byA$L.sqm)] <- 0
   
   # calculation of mean abundance per subarea
-  aggArea<-aggregate(MIKindex_byA, by=list(area=MIKindex_byA$suba), mean)
+  #aggArea<-aggregate(MIKindex_byA, by=list(area=MIKindex_byA$suba), mean)
+  aggArea <- aggregate(L.sqm ~ area, data = MIKindex_byA, FUN = mean, na.rm = TRUE)
   
   # factors for index calculation by subarea 
   aggArea$af[aggArea$area=="cw"]<-28
@@ -196,7 +196,7 @@ for(i in 1992:max_YR) {
   aggArea$year<-i
   
   # writing of table with subarea abundances
-  write.table(aggArea, paste0(wd, "results/aggArea_database.txt"),
+  write.table(aggArea, paste0(wd, "/results/aggArea_database.txt"),
               append=TRUE, sep=",", row.names = F, col.names = head)
   
   # calculation of total herring larvae abundance per subarea
