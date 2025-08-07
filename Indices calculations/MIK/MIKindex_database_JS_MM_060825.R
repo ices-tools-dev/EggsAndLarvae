@@ -123,8 +123,8 @@ for(i in 1992:max_YR) {
   
   
   MIKindex_sumLV$L.sqm<- ifelse(MIKindex_sumLV$elvolFlag=="F", 
-                                MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$depthLower*MIKindex_sumLV$flowIntCalibr/(MIKindex_sumLV$flowIntRevs*MIKindex_sumLV$netopeningArea), 
-                                ifelse(MIKindex_sumLV$elvolFlag=="D", MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$depthLower/(MIKindex_sumLV$distance*MIKindex_sumLV$netopeningArea), 
+                                MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower*MIKindex_sumLV$flowIntCalibr/(MIKindex_sumLV$flowIntRevs*MIKindex_sumLV$netopeningArea), 
+                                ifelse(MIKindex_sumLV$elvolFlag=="D", MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower/(MIKindex_sumLV$distance*MIKindex_sumLV$netopeningArea), 
                                        MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower/(3002*MIKindex_sumLV$netopeningArea)))
   
   
@@ -147,17 +147,23 @@ for(i in 1992:max_YR) {
   MIKindex_calc<-MIKindex_sumLV[VarIndex]
   
   # Calculation of mean herring larvae abundance per rectangle
-  aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
+ # aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
+  aggRect <- aggregate(L.sqm ~ statrec + area, data = MIKindex_calc, FUN = mean, na.rm = TRUE)
+  
+  str(MIKindex_calc)
   
   # Creation and writing of table with mean abundance per rectangle
   aggRect$year<-i
   
   IBTS_Rects<-read.table(paste0(wd, "/IBTS_Rects.txt"), header=TRUE,sep=",")
   names(aggRect)[4]="dummy"
+  names(aggRect)[1]="Rectangle"
+  names(aggRect)[2]="suba"
+  
   
   MIK_RAbun<-merge(IBTS_Rects,aggRect,by="Rectangle",all.y=TRUE)
   
-  #Only have one headder helper
+  #Only have one header helper
   if (i == 1992){
     head = T
   } else{
@@ -193,7 +199,7 @@ for(i in 1992:max_YR) {
   write.table(aggArea, paste0(wd, "results/aggArea_database.txt"),
               append=TRUE, sep=",", row.names = F, col.names = head)
   
-  # caculation of total herring larvae abundance per subarea
+  # calculation of total herring larvae abundance per subarea
   aggArea$miksec<-aggArea$L.sqm*aggArea$af*3086913600 
   
   # calculation of Index
@@ -217,13 +223,54 @@ for(i in 1992:max_YR) {
   write.table(MIK_NosPerRect, paste0(wd, "/results/AnzRects_database_MM.txt"),
               append=TRUE, sep=",", row.names = F, col.names = head)
   
-}
+
 
 # writing index time series table
 write.table(index_TS, paste0(wd, "/results/index_TS_database.txt"),
             sep=",", row.names = F, col.names = F, quote = F)
-
+}
 #one year
+
+#din arbejdsmappe, lav desuden mapper heri der hedder "data" og "resultater
+#læg filer der skal indlæses i data mappen
+wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/Profile/Documents/EggsAndLarvae/Indices Calculations/MIK"
+
+# reading of station data
+#url <-"https://eggsandlarvae.ices.dk/webservices/getEggsAndLarvaeData?yearBegining=2008&yearEnd=2016&month=&stage=&survey=MIK&species=&lastModifiedDate="
+
+#url_historical<-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeData?Year=1991"
+#hist <- jsonlite::fromJSON(url_historical, simplifyDataFrame = TRUE)
+
+url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=2024&SurveyCode=14537"
+MIK_Station1 <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
+
+url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=2024&SurveyCode=14537"
+MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
+
+#un<-as.data.frame(unique(MIKindex_lengths$haulId))
+
+#MIK_Station<-read.csv(paste0(wd, "data/EggsAndLarvae_EH_0425395059.csv")) 
+MIK_Station <- MIK_Station1[is.na(MIK_Station1$elhaulFlag), ]
+# define Distance,FlowIntRevs,FlowIntCalibr as.numeric
+
+MIK_Station$distance<-as.numeric(as.character(MIK_Station$distance))
+MIK_Station$flowIntRevs<-as.numeric(as.character(MIK_Station$flowIntRevs))
+MIK_Station$flowIntCalibr<-as.numeric(as.character(MIK_Station$flowIntCalibr))
+
+# Reading of herring larvae data (numbers per Length class, unmeasured, subsampling factor)
+#MIKindex_lengths<-read.csv(paste0(wd, "data/EggsAndLarvae_EM_0425395059.csv"))
+MIKindex_lengths <- MIKindex_lengths[MIKindex_lengths$species == "Clupea harengus", ]
+
+# creating of variable "year" in length data
+MIKindex_lengths$year<-str_sub(MIKindex_lengths$haulId,1,4)
+MIKindex_lengths$year<-as.numeric(MIKindex_lengths$year)
+MIKindex_lengths$length<-as.numeric(MIKindex_lengths$length)
+
+# defining global variables "year" and "index" and file for MIK index time series (index_TS) 
+year<-"year"
+index<-"index"
+index_TS<-c(year,index)
+max_YR<-max(MIK_Station$year)
 
 
   indexSTAT<-subset(MIK_Station,MIK_Station$year==2024)
@@ -280,8 +327,7 @@ indexSubset <- subset(indexALL,
                             by=list(indexSubset$haulId),sum)
   
   names(MIKindex_aggLV)[1]<-"haulId"
-  #statRec does not exist in the ICES database so I removed it (Maria Makri  August 2025)
-  
+
   # merging of aggregated larvae data (sum) with relevant station data
   Vars_sel<-c("haulId","startLatitude","startLongitude", 'statrec', "depthBottom",
               "depthLower","distance","flowIntRevs","flowIntCalibr","netopeningArea","elvolFlag")
@@ -332,7 +378,8 @@ indexSubset <- subset(indexALL,
   MIKindex_calc<-MIKindex_sumLV[VarIndex]
   
   # Calculation of mean herring larvae abundance per rectangle
-  aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
+  #aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
+  aggRect <- aggregate(L.sqm ~ statrec + area, data = MIKindex_calc, FUN = mean, na.rm = TRUE)
   
   # Creation and writing of table with mean abundance per rectangle
   aggRect$year<-2024
@@ -341,6 +388,8 @@ indexSubset <- subset(indexALL,
   
   IBTS_Rects<-read.table("D:/OneDrive - International Council for the Exploration of the Sea (ICES)/Profile/Documents/EggsAndLarvae/Indices Calculations/MIK/IBTS_Rects.txt", header=TRUE,sep=",")
   names(aggRect)[4]="dummy"
+  names(aggRect)[1]="Rectangle"
+  
   
   MIK_RAbun<-merge(IBTS_Rects,aggRect,by="Rectangle",all.y=TRUE)
   # 
