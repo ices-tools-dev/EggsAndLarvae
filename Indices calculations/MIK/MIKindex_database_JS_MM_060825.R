@@ -15,10 +15,15 @@ wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/
 #url_historical<-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeData?Year=1991"
 #hist <- jsonlite::fromJSON(url_historical, simplifyDataFrame = TRUE)
 
-url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=1992&SurveyCode=14537"
+url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=1992&Survey=I4537"
+
+#url_EH_herr <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=1992&Survey=14537&Species=ClupeaHarengus"
+#MIK_StationHerr <- jsonlite::fromJSON(url_EH_herr, simplifyDataFrame = TRUE)
+
+
 MIK_Station1 <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
 
-url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=1992&SurveyCode=14537"
+url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=1992&Survey=I4537"
 MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
 
 #un<-as.data.frame(unique(MIKindex_lengths$haulId))
@@ -26,6 +31,8 @@ MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
 #MIK_Station<-read.csv(paste0(wd, "data/EggsAndLarvae_EH_0425395059.csv")) 
 MIK_Station <- MIK_Station1[is.na(MIK_Station1$elhaulFlag), ]
 # define Distance,FlowIntRevs,FlowIntCalibr as.numeric
+#MIK_Station$year<-str_sub(MIK_Station$haulId,1,4)
+
 
 MIK_Station$distance<-as.numeric(as.character(MIK_Station$distance))
 MIK_Station$flowIntRevs<-as.numeric(as.character(MIK_Station$flowIntRevs))
@@ -273,8 +280,8 @@ index_TS<-c(year,index)
 max_YR<-max(MIK_Station$year)
 
 
-  indexSTAT<-subset(MIK_Station,MIK_Station$year==2024)
-  indexHER<-subset(MIKindex_lengths,MIKindex_lengths$year==2024)
+  indexSTAT<-subset(MIK_Station,MIK_Station$year==2019)
+  indexHER<-subset(MIKindex_lengths,MIKindex_lengths$year==2019)
   
   varPOS<-c("haulId","startLatitude","startLongitude")
   indexPOS<-indexSTAT[varPOS]

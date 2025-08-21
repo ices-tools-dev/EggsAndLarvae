@@ -4,7 +4,6 @@ install.packages('icesDatras')
 library(icesDatras)
 options(timeout = 1000)
 
-
 #din arbejdsmappe, lav desuden mapper heri der hedder "data" og "resultater
 #læg filer der skal indlæses i data mappen
 wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/Profile/Documents/EggsAndLarvae/Indices Calculations/MIK"
@@ -15,10 +14,11 @@ wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/
 #url_historical<-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeData?Year=1991"
 #hist <- jsonlite::fromJSON(url_historical, simplifyDataFrame = TRUE)
 
-url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=1992&SurveyCode=14537"
+url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=2019&YearEnd=2019&Survey=I4537"
 MIK_Station1 <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
 
-url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=1992&SurveyCode=14537"
+un<-unique(MIK_Station1$tblCodeId_Survey)
+url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=2019&YearEnd=2019&Survey=I4537"
 MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
 
 #un<-as.data.frame(unique(MIKindex_lengths$haulId))
@@ -41,19 +41,19 @@ MIKindex_lengths$year<-as.numeric(MIKindex_lengths$year)
 MIKindex_lengths$length<-as.numeric(MIKindex_lengths$length)
 
 # defining global variables "year" and "index" and file for MIK index time series (index_TS) 
-year<-"year"
+year<-2019
 index<-"index"
 index_TS<-c(year,index)
 max_YR<-max(MIK_Station$year)
 
 # Initiaton of loop to calculate MIK index time series for all survey years since 1992
 
-for(i in 1992:max_YR) {
-  print(i)
+#for(i in 1992:max_YR) {
+ # print(i)
   # Here starts index calculation for each survey year
   # Subsetting for survey year
-  indexSTAT<-subset(MIK_Station,MIK_Station$year==i)
-  indexHER<-subset(MIKindex_lengths,MIKindex_lengths$year==i)
+  indexSTAT<-subset(MIK_Station,MIK_Station$year==2019)
+  indexHER<-subset(MIKindex_lengths,MIKindex_lengths$year==2019)
   
   varPOS<-c("haulId","startLatitude","startLongitude")
   indexPOS<-indexSTAT[varPOS]
@@ -150,7 +150,7 @@ for(i in 1992:max_YR) {
   aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
   
   # Creation and writing of table with mean abundance per rectangle
-  aggRect$year<-i
+  aggRect$year<-2019
   
   IBTS_Rects<-read.table(paste0(wd, "/IBTS_Rects.txt"), header=TRUE,sep=",")
   names(aggRect)[4]="dummy"
@@ -175,7 +175,8 @@ for(i in 1992:max_YR) {
   MIKindex_byA$L.sqm[is.na(MIKindex_byA$L.sqm)] <- 0
   
   # calculation of mean abundance per subarea
-  aggArea<-aggregate(MIKindex_byA, by=list(area=MIKindex_byA$suba), mean)
+  #aggArea<-aggregate(MIKindex_byA, by=list(area=MIKindex_byA$suba), mean)
+  aggArea <- aggregate(L.sqm ~ suba, data = MIKindex_byA, FUN = mean, na.rm = TRUE)
   
   # factors for index calculation by subarea 
   aggArea$af[aggArea$area=="cw"]<-28
