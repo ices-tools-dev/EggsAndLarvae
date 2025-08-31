@@ -6,7 +6,7 @@ options(timeout = 1000)
 
 #din arbejdsmappe, lav desuden mapper heri der hedder "data" og "resultater
 #læg filer der skal indlæses i data mappen
-wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/Profile/Documents/EggsAndLarvae/Indices Calculations/MIK"
+wd1 <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/Profile/Documents/EggsAndLarvae/Indices Calculations/MIK"
 
 # reading of station data
 #url <-"https://eggsandlarvae.ices.dk/webservices/getEggsAndLarvaeData?yearBegining=2008&yearEnd=2016&month=&stage=&survey=MIK&species=&lastModifiedDate="

@@ -17,11 +17,7 @@ wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/
 
 url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=1992&Survey=I4537"
 
-#url_EH_herr <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=1992&Survey=14537&Species=ClupeaHarengus"
-#MIK_StationHerr <- jsonlite::fromJSON(url_EH_herr, simplifyDataFrame = TRUE)
-
-
-MIK_Station1 <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
+MIK_Station <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
 
 url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=1992&Survey=I4537"
 MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
@@ -29,7 +25,7 @@ MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
 #un<-as.data.frame(unique(MIKindex_lengths$haulId))
 
 #MIK_Station<-read.csv(paste0(wd, "data/EggsAndLarvae_EH_0425395059.csv")) 
-MIK_Station <- MIK_Station1[is.na(MIK_Station1$elhaulFlag), ]
+MIK_Station <- MIK_Station[is.na(MIK_Station$elhaulFlag), ]
 # define Distance,FlowIntRevs,FlowIntCalibr as.numeric
 #MIK_Station$year<-str_sub(MIK_Station$haulId,1,4)
 
@@ -37,6 +33,10 @@ MIK_Station <- MIK_Station1[is.na(MIK_Station1$elhaulFlag), ]
 MIK_Station$distance<-as.numeric(as.character(MIK_Station$distance))
 MIK_Station$flowIntRevs<-as.numeric(as.character(MIK_Station$flowIntRevs))
 MIK_Station$flowIntCalibr<-as.numeric(as.character(MIK_Station$flowIntCalibr))
+
+
+mean_distance <- aggregate(distance ~ year, data = MIK_Station, FUN = mean)
+
 
 # Reading of herring larvae data (numbers per Length class, unmeasured, subsampling factor)
 #MIKindex_lengths<-read.csv(paste0(wd, "data/EggsAndLarvae_EM_0425395059.csv"))
@@ -52,6 +52,7 @@ year<-"year"
 index<-"index"
 index_TS<-c(year,index)
 max_YR<-max(MIK_Station$year)
+
 
 # Initiaton of loop to calculate MIK index time series for all survey years since 1992
 
