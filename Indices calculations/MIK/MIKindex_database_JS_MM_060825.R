@@ -1,5 +1,6 @@
 # opens Module stringr
 library(stringr)
+library(dplyr)
 #install.packages('icesDatras')
 library(icesDatras)
 options(timeout = 1000)
@@ -18,41 +19,63 @@ wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/
 url_EH <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEH?YearBegining=1992&Survey=I4537"
 
 MIK_Station <- jsonlite::fromJSON(url_EH, simplifyDataFrame = TRUE)
-
 url_EM <-"https://eggsandlarvae.ices.dk/api/getEggsAndLarvaeDataEM?YearBegining=1992&Survey=I4537"
 MIKindex_lengths <- jsonlite::fromJSON(url_EM, simplifyDataFrame = TRUE)
 
-#un<-as.data.frame(unique(MIKindex_lengths$haulId))
+ #un<-as.data.frame(unique(MIKindex_lengths$haulId))
 
 #MIK_Station<-read.csv(paste0(wd, "data/EggsAndLarvae_EH_0425395059.csv")) 
 MIK_Station <- MIK_Station[is.na(MIK_Station$elhaulFlag), ]
 # define Distance,FlowIntRevs,FlowIntCalibr as.numeric
 #MIK_Station$year<-str_sub(MIK_Station$haulId,1,4)
 
+# 
+# MIK_Station$distance<-as.numeric(as.character(MIK_Station$distance))
+# MIK_Station$flowIntRevs<-as.numeric(as.character(MIK_Station$flowIntRevs))
+# MIK_Station$flowIntCalibr<-as.numeric(as.character(MIK_Station$flowIntCalibr))
 
-MIK_Station$distance<-as.numeric(as.character(MIK_Station$distance))
-MIK_Station$flowIntRevs<-as.numeric(as.character(MIK_Station$flowIntRevs))
-MIK_Station$flowIntCalibr<-as.numeric(as.character(MIK_Station$flowIntCalibr))
+MIK_Station <- MIK_Station %>%
+  rename_with(~ paste0(toupper(substring(., 1, 1)), substring(., 2)))
 
 
-mean_distance <- aggregate(distance ~ year, data = MIK_Station, FUN = mean)
+MIKindex_lengths <- MIKindex_lengths %>%
+  rename_with(~ paste0(toupper(substring(., 1, 1)), substring(., 2)))
+
+cols_to_num <- c("Distance", "StartLatitude", "StartLongitude", "FlowIntRevs", 'FlowIntCalibr',
+                     'DepthLower', 'DepthBottom', 'NetopeningArea',
+                     'FlowExtCalibr', 'VolumeFiltInt', 'WireAngle', 'WireLength' )
+MIK_Station[cols_to_num] <- lapply(MIK_Station[cols_to_num], as.numeric)
+
+
+cols_to_int <- c('Netopening', 'DepthUpper', 'FlowExtRevs', 'FlowEfficiency', 'NetClogging',' HaulDurationMinutes', 'HaulDurationSeconds',
+                 'Day', 'Month', 'Hour', 'Minute', 'CodendMesh', 'MeshSize')
+MIK_Station[cols_to_int] <- lapply(MIK_Station[cols_to_num], as.integer)
 
 
 # Reading of herring larvae data (numbers per Length class, unmeasured, subsampling factor)
 #MIKindex_lengths<-read.csv(paste0(wd, "data/EggsAndLarvae_EM_0425395059.csv"))
-MIKindex_lengths <- MIKindex_lengths[MIKindex_lengths$species == "Clupea harengus", ]
+MIKindex_lengths <- MIKindex_lengths[MIKindex_lengths$Species == "Clupea harengus", ]
+
+
 
 # creating of variable "year" in length data
-MIKindex_lengths$year<-str_sub(MIKindex_lengths$haulId,1,4)
-MIKindex_lengths$year<-as.numeric(MIKindex_lengths$year)
-MIKindex_lengths$length<-as.numeric(MIKindex_lengths$length)
+MIKindex_lengths$Year<-str_sub(MIKindex_lengths$HaulId,1,4)
+MIKindex_lengths$Year<-as.numeric(MIKindex_lengths$Year)
+MIKindex_lengths$Length<-as.numeric(MIKindex_lengths$Length)
+MIKindex_lengths$RaisingFactor<-as.numeric(MIKindex_lengths$RaisingFactor)
+
+str(MIKindex_lengths)
+str(MIK_Station)
+
+
 
 # defining global variables "year" and "index" and file for MIK index time series (index_TS) 
 year<-"year"
 index<-"index"
 index_TS<-c(year,index)
-max_YR<-max(MIK_Station$year)
+max_YR<-max(MIK_Station$Year)
 
+year<-1992
 
 # Initiaton of loop to calculate MIK index time series for all survey years since 1992
 
@@ -60,28 +83,29 @@ for(i in 1992:max_YR) {
   print(i)
   # Here starts index calculation for each survey year
   # Subsetting for survey year
-  indexSTAT<-subset(MIK_Station,MIK_Station$year==i)
-  indexHER<-subset(MIKindex_lengths,MIKindex_lengths$year==i)
-  
-  varPOS<-c("haulId","startLatitude","startLongitude")
+  indexSTAT<-subset(MIK_Station,MIK_Station$Year==1992)
+  indexHER<-subset(MIKindex_lengths,MIKindex_lengths$Year==1992)
+  str(indexSTAT)
+  varPOS<-c("HaulId","StartLatitude","StartLongitude")
   indexPOS<-indexSTAT[varPOS]
   
   # merging of station data with lenght data
-  indexALL<-merge(indexPOS,indexHER, by=c("haulId"), all.x=TRUE)
-  
+  indexALL<-merge(indexPOS,indexHER, by=c("HaulId"), all.x=TRUE)
+  str(indexALL)
   # here defining geographic boundaries for the "Exclusion Rule" and defining critical length (here CL > 18)
   
   indexSubset <- subset(indexALL,
-                        (startLatitude >= 54 & startLongitude < 6) |
-                          (startLatitude >= 57 & startLongitude < 9) |
-                          (startLongitude >= 9) |
-                          (startLatitude < 54 &
-                             (ifelse(length > 18, TRUE, is.na(length)))) |
-                          (startLongitude >= 6 & startLongitude < 9 &
-                             startLatitude >= 54 & startLatitude < 57 &
-                             (ifelse(length > 18, TRUE, is.na(length))))
+                        (StartLatitude >= 54 & StartLongitude < 6) |
+                          (StartLatitude >= 57 & StartLongitude < 9) |
+                          (StartLongitude >= 9) |
+                          (StartLatitude < 54 &
+                             (ifelse(Length > 18, TRUE, is.na(Length)))) |
+                          (StartLongitude >= 6 & StartLongitude < 9 &
+                             StartLatitude >= 54 & StartLatitude < 57 &
+                             (ifelse(Length > 18, TRUE, is.na(Length))))
   )
   
+  str(indexSubset)
   # indexSubset<-
   #   subset(indexALL,
   #          (indexALL$startLatitude>=54&indexALL$startLongitude<6)
@@ -92,53 +116,53 @@ for(i in 1992:max_YR) {
   #          |(indexALL$startlongitude>=6&indexALL$startlongitude<9&indexALL$startlatitude>=54&indexALL$startlatitude<57&(indexALL$length>18|is.na(indexALL$length))))
   # 
   # all number=NA set to 0 
-  indexSubset$number[is.na(indexSubset$number)]<-0
-  indexSubset$number<-as.numeric(indexSubset$number)
-  
-  indexSubset$raisingFactor[is.na(indexSubset$raisingFactor)]<-1
-  indexSubset$raisingFactor<-as.numeric(indexSubset$raisingFactor)
+  indexSubset$Number[is.na(indexSubset$Number)]<-0
+
+  indexSubset$RaisingFactor[is.na(indexSubset$RaisingFactor)]<-1
+  indexSubset$RaisingFactor<-as.numeric(indexSubset$RaisingFactor)
   
   # calculation of raised Number per Length class (raised by subsampling factor)
   
-  indexSubset$numberLarvae<-indexSubset$number*indexSubset$raisingFactor
+  indexSubset$numberLarvae<-indexSubset$Number*indexSubset$RaisingFactor
   
   # calculation of number of herring larvae per MIK-station
   MIKindex_aggLV<-aggregate(subset(indexSubset,select=c("numberLarvae")),
-                            by=list(indexSubset$haulId),sum)
+                            by=list(indexSubset$HaulId),sum)
   
-  names(MIKindex_aggLV)[1]<-"haulId"
+  names(MIKindex_aggLV)[1]<-"HaulId"
   
+  str(MIKindex_aggLV)
   
   # merging of aggregated larvae data (sum) with relevant station data
-  Vars_sel<-c("haulId","startLatitude","startLongitude","statrec","depthBottom",
-              "depthLower","distance","flowIntRevs","flowIntCalibr","netopeningArea","elvolFlag")
+  Vars_sel<-c("HaulId","StartLatitude","StartLongitude","Statrec","DepthBottom",
+              "DepthLower","Distance","FlowIntRevs","FlowIntCalibr","NetopeningArea","ElvolFlag")
   
   MIKindex_StatDat<-indexSTAT[Vars_sel]
-  MIKindex_sumLV<-merge(MIKindex_StatDat,MIKindex_aggLV,by="haulId",all.x=TRUE)
+  MIKindex_sumLV<-merge(MIKindex_StatDat,MIKindex_aggLV,by="HaulId",all.x=TRUE)
   
   # all NumberLarvae=NA set to 0
   MIKindex_sumLV$numberLarvae[is.na(MIKindex_sumLV$numberLarvae)]<-0
   
-  MIKindex_sumLV$depthBottom <- as.numeric(MIKindex_sumLV$depthBottom)
-  MIKindex_sumLV$depthLower <- as.numeric(MIKindex_sumLV$depthLower)
+  MIKindex_sumLV$DepthBottom <- as.numeric(MIKindex_sumLV$DepthBottom)
+  MIKindex_sumLV$DepthLower <- as.numeric(MIKindex_sumLV$DepthLower)
   #str(MIKindex_sumLV)
   # all missing DepthLower data replaced by DepthBottom - 5 
-  MIKindex_sumLV$depthLower[is.na(MIKindex_sumLV$depthLower)] <- MIKindex_sumLV$depthBottom-5
+  MIKindex_sumLV$DepthLower[is.na(MIKindex_sumLV$DepthLower)] <- MIKindex_sumLV$DepthBottom-5
   
   # from here onwards calculation of index as in IndexCalculation2015.R
   
-  MIKindex_sumLV$netopeningArea <- as.numeric(MIKindex_sumLV$netopeningArea)
+  MIKindex_sumLV$NetopeningArea <- as.numeric(MIKindex_sumLV$NetopeningArea)
+  str(MIKindex_sumLV)
   
-  
-  MIKindex_sumLV$L.sqm<- ifelse(MIKindex_sumLV$elvolFlag=="F", 
-                                MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower*MIKindex_sumLV$flowIntCalibr/(MIKindex_sumLV$flowIntRevs*MIKindex_sumLV$netopeningArea), 
-                                ifelse(MIKindex_sumLV$elvolFlag=="D", MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower/(MIKindex_sumLV$distance*MIKindex_sumLV$netopeningArea), 
-                                       MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower/(3002*MIKindex_sumLV$netopeningArea)))
-  
+  MIKindex_sumLV$L.sqm<- ifelse(MIKindex_sumLV$ElvolFlag=="F", 
+                                MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$DepthLower*MIKindex_sumLV$FlowIntCalibr/(MIKindex_sumLV$FlowIntRevs*MIKindex_sumLV$NetopeningArea), 
+                                ifelse(MIKindex_sumLV$ElvolFlag=="D", MIKindex_sumLV$numberLarvae*MIKindex_sumLV$DepthLower/(MIKindex_sumLV$Distance*MIKindex_sumLV$NetopeningArea), 
+                                       MIKindex_sumLV$NumberLarvae*MIKindex_sumLV$DepthLower/(3002*MIKindex_sumLV$NetopeningArea)))
+  str(MIKindex_sumLV)
   
   # allocation of subareas
-  MIKindex_sumLV$RecLat<-str_sub(MIKindex_sumLV$statrec,1,2)
-  MIKindex_sumLV$RecLong<-str_sub(MIKindex_sumLV$statrec,-2,-1)
+  MIKindex_sumLV$RecLat<-str_sub(MIKindex_sumLV$Statrec,1,2)
+  MIKindex_sumLV$RecLong<-str_sub(MIKindex_sumLV$Statrec,-2,-1)
   MIKindex_sumLV$area[MIKindex_sumLV$RecLong>"E5" & MIKindex_sumLV$RecLong<"F2" & MIKindex_sumLV$RecLat>39 & MIKindex_sumLV$RecLat<46]<-"cw"
   MIKindex_sumLV$area[MIKindex_sumLV$RecLong>"F1" & MIKindex_sumLV$RecLat>39 & MIKindex_sumLV$RecLat<46]<-"ce"
   MIKindex_sumLV$area[MIKindex_sumLV$RecLong>"E7" & MIKindex_sumLV$RecLong<"F2" & MIKindex_sumLV$RecLat>34 & MIKindex_sumLV$RecLat<40]<-"sw"
@@ -151,17 +175,17 @@ for(i in 1992:max_YR) {
   
   
   # Index calculation: Extraction of necessary variables Rectangle, area und L.sqm
-  VarIndex<-c("statrec","area","L.sqm")
+  VarIndex<-c("Statrec","area","L.sqm")
   MIKindex_calc<-MIKindex_sumLV[VarIndex]
   
   # Calculation of mean herring larvae abundance per rectangle
  # aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
-  aggRect <- aggregate(L.sqm ~ statrec + area, data = MIKindex_calc, FUN = mean, na.rm = TRUE)
+  aggRect <- aggregate(L.sqm ~ Statrec + area, data = MIKindex_calc, FUN = mean, na.rm = TRUE)
   
   str(MIKindex_calc)
   
   # Creation and writing of table with mean abundance per rectangle
-  aggRect$year<-i
+  aggRect$year<-1992
   
   IBTS_Rects<-read.table(paste0(wd, "/IBTS_Rects.txt"), header=TRUE,sep=",")
   names(aggRect)[4]="dummy"
@@ -201,11 +225,11 @@ for(i in 1992:max_YR) {
   aggArea$af[aggArea$area=="ka"]<-10
   aggArea$af[aggArea$area=="ch"]<-10
   
-  aggArea$year<-i
+  aggArea$year<-1992
   
   # writing of table with subarea abundances
   write.table(aggArea, paste0(wd, "/results/aggArea_database.txt"),
-              append=TRUE, sep=",", row.names = F, col.names = head)
+              append=TRUE, sep=",", row.names = F, col.names = T)
   
   # calculation of total herring larvae abundance per subarea
   aggArea$miksec<-aggArea$L.sqm*aggArea$af*3086913600 
@@ -219,7 +243,7 @@ for(i in 1992:max_YR) {
   index_TS<-rbind(index_TS,index_y)
   
   # counting hauls per rectangle
-  AnzRects<-table(MIKindex_calc$statrec)
+  AnzRects<-table(MIKindex_calc$Statrec)
   AnRct<-as.data.frame.table(AnzRects)
   names(AnRct)[1]<-"Rectangle"
   MIK_NosPerRect<-merge(IBTS_Rects,AnRct,by="Rectangle",all=TRUE)
