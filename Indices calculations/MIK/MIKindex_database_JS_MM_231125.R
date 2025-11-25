@@ -2,12 +2,13 @@
 library(stringr)
 #install.packages('icesDatras')
 library(icesDatras)
+library(dplyr)
 options(timeout = 1000)
 
 
 #din arbejdsmappe, lav desuden mapper heri der hedder "data" og "resultater
 #læg filer der skal indlæses i data mappen
-wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/Profile/Desktop/Maria_ICES_dataflows/Jonathan_scripts"
+wd <-"D:/OneDrive - International Council for the Exploration of the Sea (ICES)/Profile/Desktop/Maria_ICES_dataflows/Jonathan_scripts/EggsandLarvae/Indices calculations/MIK"
 
 # reading of station data
 #url <-"https://eggsandlarvae.ices.dk/webservices/getEggsAndLarvaeData?yearBegining=2008&yearEnd=2016&month=&stage=&survey=MIK&species=&lastModifiedDate="
@@ -159,7 +160,7 @@ for(i in 1992:max_YR) {
                                 MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower*MIKindex_sumLV$flowIntCalibr/(MIKindex_sumLV$flowIntRevs*MIKindex_sumLV$netopeningArea), 
                                 ifelse(MIKindex_sumLV$elvolFlag=="D", MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower/(MIKindex_sumLV$distance*MIKindex_sumLV$netopeningArea), 
                                        MIKindex_sumLV$numberLarvae*MIKindex_sumLV$depthLower/(3002*MIKindex_sumLV$netopeningArea)))
-
+  
   
   
   
@@ -182,7 +183,7 @@ for(i in 1992:max_YR) {
   MIKindex_calc<-MIKindex_sumLV[VarIndex]
   
   # Calculation of mean herring larvae abundance per rectangle
- # aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
+  # aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
   #aggRect <- aggregate(L.sqm ~ statrec + area, data = MIKindex_calc, FUN = mean)
   aggRect<-aggregate(MIKindex_calc, by=list(Rectangle=MIKindex_calc$statrec,suba=MIKindex_calc$area), mean)
   
@@ -203,7 +204,7 @@ for(i in 1992:max_YR) {
     head = F
   }
   
-  write.table(MIK_RAbun, paste0(wd, "/resultsMaria/RectAbun_database.txt"),
+  write.table(MIK_RAbun, paste0(wd, "/results/RectAbun_database.txt"),
               append=TRUE, sep=",", row.names = F, col.names = head)
   
   # extraction of data for mean abundance per Subarea
@@ -231,7 +232,7 @@ for(i in 1992:max_YR) {
   aggArea$year<-i
   
   # writing of table with subarea abundances
-  write.table(aggArea, paste0(wd, "/resultsMaria/aggArea_database.txt"),
+  write.table(aggArea, paste0(wd, "/results/aggArea_database.txt"),
               append=TRUE, sep=",", row.names = F, col.names = head)
   
   # calculation of total herring larvae abundance per subarea
@@ -255,12 +256,12 @@ for(i in 1992:max_YR) {
   MIK_NosPerRect$year <- i
   
   
-  write.table(MIK_NosPerRect, paste0(wd, "/resultsMaria/AnzRects_database_MM.txt"),
+  write.table(MIK_NosPerRect, paste0(wd, "/results/AnzRects_database_MM.txt"),
               append=TRUE, sep=",", row.names = F, col.names = head)
   
-
-
-# writing index time series table
-write.table(index_TS, paste0(wd, "/resultsMaria/index_TS_database.txt"),
-            sep=",", row.names = F, col.names = F, quote = F)
+  
+  
+  # writing index time series table
+  write.table(index_TS, paste0(wd, "/results/index_TS_database.txt"),
+              sep=",", row.names = F, col.names = F, quote = F)
 }
