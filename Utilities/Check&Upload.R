@@ -4,51 +4,35 @@
 
 library(dplyr)
 library(tidyverse)
-
-## Load function
-
-screenFile <- function(filename, email, datatype, quiet = FALSE) {
-  require(httr)
-  # form content
-  content <-
-    list(
-      Request =  sprintf("{FileName:'%s', EmailAddress:'%s', DataType:'%s'}", basename(filename), email, datatype),
-      File = upload_file(filename)
-    )
-  
-  # message
-  if (!quiet) {
-    message("POSTing ...  ", basename(filename))
-  }
-  
-  # perform request
-  x <- POST("http://datsu.ices.dk/DatsuRest/api/ScreenFile", 
-            body = content, 
-            encode = "multipart")
-  
-  # get results
-  content(x)
-}
+#install.packages("icesDatsu")
+library(icesDatsu)
 
 ## Set the directory containing the files to be checked
 
-fnames <- dir("//fs.ices.local/projects/DP1/projects/EggLarvae_Database/Data/NEW FORMAT/MIK", full = TRUE)
+fnames <- dir("//fs.ices.local/projects/DP1/projects/EggLarvae_Database/Data/NEW FORMAT/MIK/MariaM_ReUploadJune2026/ELVolFlag", full = TRUE)
+
+
+require(icesConnect)
+icesConnect::set_username("maria.makri")
+icesConnect:::token_set_from_keyring("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoibWFyaWEubWFrcmlAaWNlcy5kayIsImp0aSI6IjUyMGU0ZTRkLTA1MTAtNGRmYy1hZTBjLTIwNDkwNzcxZTQ5NSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im1hcmlhLm1ha3JpQGljZXMuZGsiLCJVc2VyRW1haWwiOiJtYXJpYS5tYWtyaUBpY2VzLmRrIiwiRW1haWwiOiJtYXJpYS5tYWtyaUBpY2VzLmRrIiwiZXhwIjoxNzkxOTcyNTc3LCJpc3MiOiJodHRwOi8vdGFmLmljZXMuZGsiLCJhdWQiOiJodHRwOi8vdGFmLmljZXMuZGsifQ.ytAJ5Hqkt96pNCd9o4kh_DBwy9psI1ifMLmbU3HoX-8", "maria.makri")
+
 
 # set email of submitter
 
-my_email = "adriana.villamor@ices.dk"
+#Go to the ices page to generate a token
+
 
 res <- 
-  do.call(
-    rbind,
-    lapply(
+    sapply(
       fnames[],
-      screenFile,
-      email = my_email,
-      datatype = "EGGSANDLARVAE"
-    ))
+      uploadDatsuFileFireAndForget,
+      dataSetVerID = 130
+    )
 
-res <-as.data.frame(apply(res, 2, unlist))
+#Το look at errors and messages of the screening result use these 
+# getScreeningSessionDetails(id)
+# messages <- getScreeningSessionMessages(id)
+
 
 # If Number of errors is different from "-1", means there are some errors.
 # Check calling the row:
@@ -75,7 +59,7 @@ ready <- res %>% filter(NumberOfErrors == "-1")
 # In this link you have to substitute the username and token
 # USERNAME = your ices user name
 # TOKEN = contact ices for the token: carlos@ices.dk 
-ready$upload_link <- paste0("http://eggsandlarvae.ices.dk/EggsAndLarvaeWebServices.asmx/uploadEggsAndLarvaeFile?user=adriana.villamor&token=TOKEN&datsuSessionID=", ready$SessionID)
+ready$upload_link <- paste0("https://eggsandlarvae.ices.dk/EggsAndLarvaeWebServices.asmx/uploadEggsAndLarvaeFile?user=adriana.villamor&token=TOKEN&datsuSessionID=", ready$SessionID)
 
 
 #Uploading to the database
